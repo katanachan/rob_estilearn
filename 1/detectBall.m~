@@ -19,7 +19,7 @@ function [segI, loc] = detectBall(I)
 %
 load mu.mat
 load sig.mat 
-thresh = 0.01;
+thresh = 0.9
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -37,6 +37,8 @@ for i=1:size(I,1)
         for l = 1:size(I,3)
             k = [k, (bsxfun(@minus,I(i,j,l),mu(:,l)))];
         end
+        %px(i,j) = log((1/((2*3.14)^1.5)*(sqrt(det(sig))))*exp((-0.5)*(k*inv(sig)*k')));
+        for l = 1:size(I,3)
         px(i,j) = k*inv(sig)*k' + log(det(sig));        
     end
 end
@@ -57,6 +59,7 @@ figure,
 imshow(bw_biggest); hold on;
 
 % show the centroid
+% http://www.mathworks.com/help/images/ref/regionprops.html
 S = regionprops(CC,'Centroid');
 loc = S(idx).Centroid;
 plot(loc(1), loc(2),'r+');

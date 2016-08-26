@@ -41,11 +41,3 @@ title('Pixel Color Distribubtion');
 xlabel('Red');
 ylabel('Green');
 zlabel('Blue');
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% [IMPORTANT]
-%
-% Now choose you model type and estimate the parameters (mu and Sigma) from
-% the sample data.
-%
-

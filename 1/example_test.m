@@ -14,6 +14,7 @@ for k=1:19
     
     figure, imshow(segI); hold on; 
     plot(loc(1), loc(2), '+b','MarkerSize',7); 
+    title('Centroid located');
     
     disp('Press any key to continue. (Ctrl+c to exit)')
     pause
