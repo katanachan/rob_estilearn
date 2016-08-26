@@ -19,7 +19,7 @@ function [segI, loc] = detectBall(I)
 %
 load mu.mat
 load sig.mat 
-thresh = 0.4
+thresh = 0.9
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,12 +36,16 @@ for i=1:size(I,1)
         for l = 1:size(I,3)
             k = [k, (bsxfun(@minus,I(i,j,l),mu(:,l)))];
         end
-        px(i,j) = (1/((2*3.14)^1.5)*(sqrt(det(sig))))*exp((-0.5)*(k*inv(sig)*k'));
+        size(k')
+        %size(inv(sig))
+        %px(i,j) = k*inv(sig).*k';
     end
 end
-
-figure; imshow(px);
-title('Gaussian probability');
+%        px(i,j) = (bsxfun(@minus,I(i,j,:),mu(:,:)))'.*inv(sig).*(bsxfun(@minus,I(i,j,:),mu(:,:)));
+%               %px(i,j) = exp((-0.5).*permute(bsxfun(@minus,I(i,j,:),mu)).*inv(sig).*(bsxfun(@minus, I(i,j,:), mu)));
+%px = (1/((2*3.14)^1.5)*((det(var))^0.5))*exp((-0.5)*bsxfun(@minus,I,mean)*inv(sig)*(bsxfun(@minus, I, mean))'); 
+%    end
+%end
 px = px < thresh;
 figure; imshow(px);
 title('Binary image');

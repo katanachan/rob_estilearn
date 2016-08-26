@@ -14,9 +14,12 @@ zlabel('Value');
 % the sample data.
 %3D Gaussian has to be found out in this case!
 
-mu = zeros(1,3);
-sig = zeros(3);
+mu = [0; 0; 0];
+sig = zeros(3,3);
 x = Samples;
 a = size(x);
 mu = sum(x)/a(1,1);
 sig = (1/a(1,1))*bsxfun(@minus,x,mu)'*(bsxfun(@minus,x,mu));
+
+mu
+
