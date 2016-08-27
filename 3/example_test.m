@@ -45,4 +45,4 @@ myMap = occGridMapping(ranges(:,1:1000), scanAngles, pose(:,1:1000), param);
 % The final grid map: 
 figure,
 imagesc(myMap); 
-colormap('gray'); axis equal;
+colormap('hot'); axis equal;
