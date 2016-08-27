@@ -12,6 +12,7 @@ load practice.mat
 %     angles are with respect to the body coordinate frame.
 % [4] pose is 3-by-K array containing the pose of the mobile robot over time. 
 %     e.g. pose(:,k) is the [x,y,theta(in radian)] at time index k.
+%This is only taking the first time step
 
 lidar_local = [ranges(:,1).*cos(scanAngles) -ranges(:,1).*sin(scanAngles)];
 
