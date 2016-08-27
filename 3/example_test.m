@@ -31,7 +31,7 @@ param.origin = [700,600]';
 
 % 4. Log-odd parameters 
 param.lo_occ = 1;
-param.lo_free = 0.5; 
+param.lo_free = 0.1; 
 param.lo_max = 100;
 param.lo_min = -100;
 
@@ -40,9 +40,9 @@ param.lo_min = -100;
 % Running time could take long depending on the efficiency of your code.
 % For a quicker test, you may take some hundreds frames as input arguments as
 % shown.
-myMap = occGridMapping(ranges(:,1:1000), scanAngles, pose(:,1:1000), param);
+myMap = occGridMapping(ranges(:,:), scanAngles, pose(:,:), param);
 
 % The final grid map: 
 figure,
 imagesc(myMap); 
-colormap('hot'); axis equal;
+colormap('gray'); axis equal;
