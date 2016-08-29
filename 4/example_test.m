@@ -29,6 +29,8 @@ param.origin = [685,572]';
 
 param.init_pose = init_pose;
 
+param.pose = pose; param.t = t;
+
 %% Plot LIDAR data
 lidar_local = [ranges(:,1).*cos(scanAngles) -ranges(:,1).*sin(scanAngles)];
 
@@ -48,7 +50,7 @@ title('Lidar measurement in the body frame');
 % Running time could take long depending on the efficiency of your code.
 % For a quicker test, you may take some hundreds frames as input arguments as
 % shown.
-%pose = particleLocalization(ranges(:,1:1000), scanAngles, M, param);
+pose = particleLocalization(ranges(:,1:1000), scanAngles, M, param);
 load practice-answer.mat;
 
 %% Plot final solution
