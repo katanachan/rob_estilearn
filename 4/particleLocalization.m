@@ -9,6 +9,7 @@ N = size(ranges, 2); %remember ranges is a bunch of readings per time step
 % Output format is [x1 x2, ...; y1, y2, ...; z1, z2, ...]
 myPose = zeros(3, N); %going to output x, y, theta
 myMap = map;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 % Map Parameters 
 % 
@@ -16,13 +17,9 @@ myMap = map;
 myResolution = param.resol;
 % % the origin of the map in pixels
 myOrigin = transpose(param.origin); 
-lo_occ = +10;
-lo_free = +1;
 % The initial pose is given
 myPose(:,1) = param.init_pose;
-previous_t = -1;
 K = size(scanAngles);
-
 % You should put the given initial pose into myPose for j=1, ignoring the j=1 ranges. 
 % The pose(:,1) should be the pose when ranges(:,j) were measured.
 
@@ -33,38 +30,54 @@ M = 5;                            % Please decide a reasonable number of M,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create M number of particles
 P = repmat(myPose(:,1), [1, M]);
+W = ones(M,1) * 1/M; %initial weights have to be normalized
+corrP = zeros(M,1);
 
 for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
 	%     % 1) Propagate the particles
-%I'm using a Kalman filter here to estimate myPose! Do not want to /know how to construct random noise for pose
-    [ predictx, predicty, state, param.P ] = kalmanFilter( t(i), param.pose(1,i), param.pose(2,i), state, param.P, previous_t )
-    previous_t = t(i);
-    P = P + [ state(3), 0, 0; 0 state(4) 0; 0 0 0 ]*(randn([size(P,1), M]); %I'm not adding any noise to my angles
-    x = state(1);
-    y = state(2);
-    theta = param.pose(3,i);	
-%       
+    sigma_m = diag([0.25, 0.25, 0.01]);
+    sigma_u = [0,0,0];   
 %     % 2) Measurement Update 
 %     %   2-1) Find grid cells hit by the rays (in the grid map coordinate frame) 
     for j = 1:K
-    	angle = bsxfun(@plus,scanAngles,theta));
-    	a = [ranges(:,j).*cos(angle) -ranges(:,j).*sin(angle)]; b = [x y];
-    	pos_occ =  bsxfun(@plus,a,b);
-    	%occupied position cell calculated from the ray from the robot and its pose
-    	%We include all K range scans in pos_occ 
-    	%discretization
-    	grid_occ = bsxfun(@plus,ceil(myResolution*pos_occ),myOrigin);
-    	pose_dis = ceil(myResolution*b) + myOrigin;
-    	for k = 1:size(pos_occ,1)	
-    		[freex, freey] = bresenham(grid_occ(k,1),grid_occ(k,2),pose_dis(1), pose_dis(2));
-    		free = sub2ind(size(myMap),freey,freex);
-%     %   2-2) For each particle, calculate the correlation scores of the particles
-%
-    		corrP = map(grid_occ(k,2),grid_occ(k,1))* 
-    		corrMap(grid_occ(k,2),grid_occ(k,1)) = corrMap(grid_occ(k,2),grid_occ(k,1)) + lo_occ;
-    		corrMap(free) = corrMap(free) - lo_free;
+    	%This is only a discretization from the local to global LIDARframe
+    	for k = 1:M
+    	   	P(:,k) = myPose(:,i-1) + mvnrnd(sigma_u,sigma_m)';
     	end
+
+        angle = bsxfun(@plus, P(3,:)',scanAngles(j));
+        a = [ ranges(j,i)*cos(angle), -ranges(j,i)*sin(angle) ]; b = [P(1,:)', P(2,:)'];
+        pos_occ = bsxfun(@plus, b,a);
+        grid_occ = bsxfun(@plus,ceil(myResolution*pos_occ),myOrigin);
+        a = [ranges(j,i)*cos(scanAngles(j) + myPose(3,i-1)) -ranges(j,i)*sin(scanAngles(j) + myPose(3,i-1))];
+        b=[myPose(1,i-1) myPose(2,i-1)];
+        orig_grid = ceil(myResolution*(a+b)) + myOrigin
+        delta_metric = bsxfun(@minus, grid_occ, orig_grid);
+        for k = 1:M
+           if delta_metric(k,:) == [0,0];
+              delta_metric(k,:) = [+10,+10];
+           else 
+              delta_metric(k,:) = [-10,-10];
+           end
+        
+        delta_metric = myMap(orig_grid(2), orig_grid(1))*delta_metric;
+        size(myMap)
+        corrP = corrP + delta_metric(:,1)
     end
+        
+        W = W.*corrP;
+        n_eff = (sum(W))^2/sum(W.^2);
+       
+        if n_eff < M/5
+        	W = (1/sum(W))*W;
+        end
+        %cdf resampling i dunno how
+       
+        [value,index] = max(W(:));
+        index = ind2sub(size(W(:)),index)
+        myPose(:,j) = P(:,index(1));  
+    	end
+end
 
 
 %     %   2-3) Update the particle weights         
