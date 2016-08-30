@@ -19,23 +19,24 @@ myResolution = param.resol;
 myOrigin = transpose(param.origin); 
 % The initial pose is given
 myPose(:,1) = param.init_pose;
-K = size(scanAngles);
+K = size(scanAngles,1);
 % You should put the given initial pose into myPose for j=1, ignoring the j=1 ranges. 
 % The pose(:,1) should be the pose when ranges(:,j) were measured.
 
 % Decide the number of particles, M.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-M = 5;                            % Please decide a reasonable number of M, 
+M = 100;                            % Please decide a reasonable number of M, 
                                % based on your experiment using the practice data.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create M number of particles
 P = repmat(myPose(:,1), [1, M]);
 W = ones(M,1) * 1/M; %initial weights have to be normalized
 corrP = zeros(M,1);
-
+delta_new = zeros(M,K);
 for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
 	%     % 1) Propagate the particles
-    sigma_m = diag([0.25, 0.25, 0.01]);
+    corrP = zeros(M,1); 
+    sigma_m = diag([0.025, 0.025, 0.030]);
     sigma_u = [0,0,0];   
 %     % 2) Measurement Update 
 %     %   2-1) Find grid cells hit by the rays (in the grid map coordinate frame) 
@@ -49,34 +50,31 @@ for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
         a = [ ranges(j,i)*cos(angle), -ranges(j,i)*sin(angle) ]; b = [P(1,:)', P(2,:)'];
         pos_occ = bsxfun(@plus, b,a);
         grid_occ = bsxfun(@plus,ceil(myResolution*pos_occ),myOrigin);
-        a = [ranges(j,i)*cos(scanAngles(j) + myPose(3,i-1)) -ranges(j,i)*sin(scanAngles(j) + myPose(3,i-1))];
-        b=[myPose(1,i-1) myPose(2,i-1)];
-        orig_grid = ceil(myResolution*(a+b)) + myOrigin
-        delta_metric = bsxfun(@minus, grid_occ, orig_grid);
-        for k = 1:M
-           if delta_metric(k,:) == [0,0];
-              delta_metric(k,:) = [+10,+10];
-           else 
-              delta_metric(k,:) = [-10,-10];
-           end
+        if orig_grid(1) > size(myMap,2) | orig_grid(2) > size(myMap,1) | orig_grid(1) < 1 | orig_grid(2) < 1
+        	map_value = 0;
+        else
+            map_value = myMap(orig_grid(2), orig_grid(1)); 
+        end
+
+        delta_new(:,j) = map_value*delta_metric(:,1);
         
-        delta_metric = myMap(orig_grid(2), orig_grid(1))*delta_metric;
-        size(myMap)
-        corrP = corrP + delta_metric(:,1)
     end
-        
+        for j = 1:K
+            corrP = corrP + delta_new(:,j);
+        end
         W = W.*corrP;
         n_eff = (sum(W))^2/sum(W.^2);
        
         if n_eff < M/5
         	W = (1/sum(W))*W;
         end
-        %cdf resampling i dunno how
-       
         [value,index] = max(W(:));
         index = ind2sub(size(W(:)),index)
-        myPose(:,j) = P(:,index(1));  
-    	end
+        myPose(:,i) = P(:,index(1));
+        i
+    end
+       
+          
 end
 
 
@@ -90,6 +88,3 @@ end
 %    
 % 
 % end
-
-end
-
