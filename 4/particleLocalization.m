@@ -25,53 +25,48 @@ K = size(scanAngles,1);
 
 % Decide the number of particles, M.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-M = 100;                            % Please decide a reasonable number of M, 
+M = 500;                            % Please decide a reasonable number of M, 
                                % based on your experiment using the practice data.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create M number of particles
 P = repmat(myPose(:,1), [1, M]);
-W = ones(M,1) * 1/M; %initial weights have to be normalized
 corrP = zeros(M,1);
 delta_new = zeros(M,K);
 for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
 	%     % 1) Propagate the particles
     corrP = zeros(M,1); 
-    sigma_m = diag([0.025, 0.025, 0.030]);
+    W = ones(M,1) * 1/M; %initial weights have to be normalized
+    sigma_m = diag([0.25, 0.25, 0.10]);
     sigma_u = [0,0,0];   
 %     % 2) Measurement Update 
 %     %   2-1) Find grid cells hit by the rays (in the grid map coordinate frame) 
-    for j = 1:K
+    for j = 1:M
     	%This is only a discretization from the local to global LIDARframe
-    	for k = 1:M
-    	   	P(:,k) = myPose(:,i-1) + mvnrnd(sigma_u,sigma_m)';
-    	end
-
-        angle = bsxfun(@plus, P(3,:)',scanAngles(j));
-        a = [ ranges(j,i)*cos(angle), -ranges(j,i)*sin(angle) ]; b = [P(1,:)', P(2,:)'];
-        pos_occ = bsxfun(@plus, b,a);
+    	P(:,j) = myPose(:,i-1) + mvnrnd(sigma_u,sigma_m)';
+    	
+        angle = bsxfun(@plus, scanAngles, P(3,j)');
+        a = [ ranges(:,i).*cos(angle), -ranges(:,i).*sin(angle) ]; b = [P(1,j)', P(2,j)'];
+        pos_occ = bsxfun(@plus, a,b);
         grid_occ = bsxfun(@plus,ceil(myResolution*pos_occ),myOrigin);
-        if orig_grid(1) > size(myMap,2) | orig_grid(2) > size(myMap,1) | orig_grid(1) < 1 | orig_grid(2) < 1
-        	map_value = 0;
-        else
-            map_value = myMap(orig_grid(2), orig_grid(1)); 
-        end
 
-        delta_new(:,j) = map_value*delta_metric(:,1);
-        
+        grid_occ(grid_occ(:,1) < 1 | grid_occ(:,2) < 1 | grid_occ(:,1) > size(myMap,2) | grid_occ(:,1) > size(myMap,1)) = [];
+
+        corrP(j) = sum(sum(myMap(grid_occ(:,2),grid_occ(:,1)) >= 0.5))*10;  %This will give the occupied cells that match with the LIDAR scans
+        corrP(j) = corrP(j) - sum(sum(myMap(grid_occ(:,1),grid_occ(:,1)) < 0))*2 %This will give the free cells that do not match with the LIDAR scans ie. the cells are free but the LIDAR scans insist that they're occupied
     end
-        for j = 1:K
-            corrP = corrP + delta_new(:,j);
-        end
-        W = W.*corrP;
+        
+        W = W + corrP;
+        W = (1/sum(W))*W;
         n_eff = (sum(W))^2/sum(W.^2);
        
-        if n_eff < M/5
-        	W = (1/sum(W))*W;
-        end
+        %if n_eff < M/5
+        %	sum_of_weights = cumsum(W);
+
+        %end
         [value,index] = max(W(:));
         index = ind2sub(size(W(:)),index)
         myPose(:,i) = P(:,index(1));
-        i
+        
     end
        
           

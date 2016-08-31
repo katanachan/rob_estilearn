@@ -49,7 +49,7 @@ title('Lidar measurement in the body frame');
 % For a quicker test, you may take some hundreds frames as input arguments as
 % shown.
 pose = particleLocalization(ranges(1:100,1:1000), scanAngles(1:100), M, param);
-load practice-answer.mat;
+%load practice-answer.mat;
 
 %% Plot final solution
 % The final grid map:
