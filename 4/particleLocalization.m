@@ -19,12 +19,17 @@ myResolution = param.resol;
 myOrigin = transpose(param.origin); 
 % The initial pose is given
 myPose(:,1) = param.init_pose;
+previous_t = -1;
+%t = param.t;
+para = {};
+t = param.t;
+state = [0,0,0,0]; 
 % You should put the given initial pose into myPose for j=1, ignoring the j=1 ranges. 
 % The pose(:,1) should be the pose when ranges(:,j) were measured.
 
 % Decide the number of particles, M.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-M = 100;                            % Please decide a reasonable number of M, 
+M = 1500;                            % Please decide a reasonable number of M, 
                                % based on your experiment using the practice data.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create M number of particles
@@ -33,7 +38,11 @@ for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
 	%     % 1) Propagate the particles
     corrP = zeros(M,1); 
     W = ones(M,1) * 1/M; %initial weights have to be normalized
-    sigma_m = diag([0.1, 0.1, 0.050]);
+    [ predictx, predicty, state, para ] = kalmanFilter( t(i), myPose(1,i-1), myPose(2,i-1), state, para, previous_t );
+    previous_t = t(i);
+    %t(i) = 0.0249;
+    %previous_t = 0; 
+    sigma_m = diag([abs(state(3)) abs(state(4)) abs(state(4)+state(3))]);
     sigma_u = [0,0,0];   
 %     % 2) Measurement Update 
 %     %   2-1) Find grid cells hit by the rays (in the grid map coordinate frame) 
