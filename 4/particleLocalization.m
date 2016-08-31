@@ -24,7 +24,7 @@ myPose(:,1) = param.init_pose;
 
 % Decide the number of particles, M.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-M = 1000;                            % Please decide a reasonable number of M, 
+M = 100;                            % Please decide a reasonable number of M, 
                                % based on your experiment using the practice data.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create M number of particles
@@ -33,7 +33,7 @@ for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
 	%     % 1) Propagate the particles
     corrP = zeros(M,1); 
     W = ones(M,1) * 1/M; %initial weights have to be normalized
-    sigma_m = diag([1, 1, 0.10]);
+    sigma_m = diag([0.1, 0.1, 0.050]);
     sigma_u = [0,0,0];   
 %     % 2) Measurement Update 
 %     %   2-1) Find grid cells hit by the rays (in the grid map coordinate frame) 
