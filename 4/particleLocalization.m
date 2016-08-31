@@ -19,24 +19,21 @@ myResolution = param.resol;
 myOrigin = transpose(param.origin); 
 % The initial pose is given
 myPose(:,1) = param.init_pose;
-K = size(scanAngles,1);
 % You should put the given initial pose into myPose for j=1, ignoring the j=1 ranges. 
 % The pose(:,1) should be the pose when ranges(:,j) were measured.
 
 % Decide the number of particles, M.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-M = 500;                            % Please decide a reasonable number of M, 
+M = 1000;                            % Please decide a reasonable number of M, 
                                % based on your experiment using the practice data.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create M number of particles
 P = repmat(myPose(:,1), [1, M]);
-corrP = zeros(M,1);
-delta_new = zeros(M,K);
 for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
 	%     % 1) Propagate the particles
     corrP = zeros(M,1); 
     W = ones(M,1) * 1/M; %initial weights have to be normalized
-    sigma_m = diag([0.25, 0.25, 0.10]);
+    sigma_m = diag([1, 1, 0.10]);
     sigma_u = [0,0,0];   
 %     % 2) Measurement Update 
 %     %   2-1) Find grid cells hit by the rays (in the grid map coordinate frame) 
@@ -48,37 +45,66 @@ for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
         a = [ ranges(:,i).*cos(angle), -ranges(:,i).*sin(angle) ]; b = [P(1,j)', P(2,j)'];
         pos_occ = bsxfun(@plus, a,b);
         grid_occ = bsxfun(@plus,ceil(myResolution*pos_occ),myOrigin);
+        
+        null_grid = find(grid_occ(:,1) < 1 | grid_occ(:,2) < 1 | grid_occ(:,1) > size(myMap,2) | grid_occ(:,2) > size(myMap,1));
+        grid_x = grid_occ(:,1);
+        grid_y = grid_occ(:,2);
+        grid_x(null_grid) = [];
+        grid_y(null_grid) = [];
 
-        grid_occ(grid_occ(:,1) < 1 | grid_occ(:,2) < 1 | grid_occ(:,1) > size(myMap,2) | grid_occ(:,1) > size(myMap,1)) = [];
-
-        corrP(j) = sum(sum(myMap(grid_occ(:,2),grid_occ(:,1)) >= 0.5))*10;  %This will give the occupied cells that match with the LIDAR scans
-        corrP(j) = corrP(j) - sum(sum(myMap(grid_occ(:,1),grid_occ(:,1)) < 0))*2 %This will give the free cells that do not match with the LIDAR scans ie. the cells are free but the LIDAR scans insist that they're occupied
+        corrP(j) = sum(sum(myMap(grid_y, grid_x) >= 0.5))*10;  %This will give the occupied cells that match with the LIDAR scans
+        corrP(j) = corrP(j) - sum(sum(myMap(grid_y, grid_x) < -0.2))*2; %This will give the free cells that do not match with the LIDAR scans ie. the cells are free but the LIDAR scans insist that they're occupied
+        W(j) = W(j) + corrP(j);
+        
+%     %   2-3) Update the particle weights         
+%  
     end
         
-        W = W + corrP;
+        
         W = (1/sum(W))*W;
-        n_eff = (sum(W))^2/sum(W.^2);
-       
-        %if n_eff < M/5
-        %	sum_of_weights = cumsum(W);
-
-        %end
-        [value,index] = max(W(:));
-        index = ind2sub(size(W(:)),index)
-        myPose(:,i) = P(:,index(1));
         
-    end
+        n_eff = (sum(W))^2/sum(W.^2);
+        disp(n_eff);
+
+   
+%     % 3) Resample if the effective number of particles is smaller than a threshold
+%        
+        while n_eff < 0.8*M
+            W_new = zeros(size(W));
+            P_new = zeros(size(P));
+        	sum_of_weights = cumsum(W);
+        	thresh = 1/size(sum_of_weights,1);
+        	for k = 1:size(sum_of_weights,1)
+        	   [row_index, col_index] = ind2sub(size(W),find(sum_of_weights>thresh,1,'first'));
+        	   if isempty(row_index) == 1
+        	   	P_new(:,k) =  P(:,k);
+        	   	W_new(k) = W(k);
+        	   else
+        	   	P_new(:,k) = P(:,row_index);
+        	   	W_new(k) = W(row_index);
+
+        	   end
+        	   
+        	   thresh = thresh + 1/size(sum_of_weights,1);
+        	end
+
+        	P = P_new;
+        	W = (1/sum(W_new))*W_new; 
+        	n_eff = (sum(W))^2/sum(W.^2);
+        end
+
+%     %   2-4) Choose the best particle to update the pose
+%  
+        [value,index] = max(W(:));
+        index = ind2sub(size(W(:)),index);
+        myPose(:,i) = P(:,index(1));
+        i
+        
+end
        
           
 end
 
-
-%     %   2-3) Update the particle weights         
-%  
-%     %   2-4) Choose the best particle to update the pose
-%     
-%     % 3) Resample if the effective number of particles is smaller than a threshold
-% 
 %     % 4) Visualize the pose on the map as needed
 %    
 % 
