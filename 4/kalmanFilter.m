@@ -18,7 +18,6 @@ function [ predictx, predicty, state, param ] = kalmanFilter( t, x, y, state, pa
 
     % Check if the first time running this function
     if previous_t<0
-        'Hello'
         state = [x, y, 0, 0]';
         param.P = 4 * eye(4);
         predictx = x;

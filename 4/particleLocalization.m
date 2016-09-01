@@ -22,7 +22,11 @@ myPose(:,1) = param.init_pose;
 previous_t = -1;
 para = {};
 t = 1; 
-state = [0,0,0,0]; 
+state = [0,0,0,0];
+
+para_theta = {};
+t = 1; 
+state_theta = [0,0,0,0]; 
 % You should put the given initial pose into myPose for j=1, ignoring the j=1 ranges. 
 % The pose(:,1) should be the pose when ranges(:,j) were measured.
 
@@ -38,6 +42,8 @@ for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
     corrP = zeros(M,1); 
     W = ones(M,1) * 1/M; %initial weights have to be normalized
     [ ~, ~, state, para ] = kalmanFilter( t, myPose(1,i-1), myPose(2,i-1), state, para, previous_t );
+    [ ~, ~, state_theta, para_theta ] = kalmanFilter( t, myPose(3,i-1), 0, state_theta, para_theta, previous_t );
+    
     %previous_t = t(i);
     state(3), state(4)
     previous_t = 1-0.0249;
@@ -45,7 +51,7 @@ for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
         sigma_m = diag([0.1 0.1 0.035]);
     else
     	
-    	sigma_m = diag([abs(state(3)) abs(state(4)) 0.01*abs(state(4)+state(3))]);
+    	sigma_m = diag([abs(state(3)) abs(state(4)) abs(state_theta(2))]);
     end
     sigma_u = [0,0,0];   
 %     % 2) Measurement Update 
