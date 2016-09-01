@@ -21,7 +21,7 @@ myOrigin = transpose(param.origin);
 myPose(:,1) = param.init_pose;
 previous_t = -1;
 para = {};
-t = 1; 
+
 state = [0,0,0,0];
 
 para_theta = {};
@@ -45,13 +45,13 @@ for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
     [ ~, ~, state_theta, para_theta ] = kalmanFilter( t, myPose(3,i-1), 0, state_theta, para_theta, previous_t );
     
     %previous_t = t(i);
-    state(3), state(4)
+    %state(3), state(4), 
     previous_t = 1-0.0249;
     if i < 30
         sigma_m = diag([0.1 0.1 0.035]);
     else
     	
-    	sigma_m = diag([abs(state(3)) abs(state(4)) abs(state_theta(2))]);
+    	sigma_m = diag([0.1*abs(state(3)) 0.1*abs(state(4)) 0.01*abs(state_theta(2))]);
     end
     sigma_u = [0,0,0];   
 %     % 2) Measurement Update 
@@ -83,7 +83,7 @@ for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
         W = (1/sum(W))*W;
         
         n_eff = (sum(W))^2/sum(W.^2);
-        disp(n_eff);
+        %disp(n_eff);
 
    
 %     % 3) Resample if the effective number of particles is smaller than a threshold
@@ -117,7 +117,7 @@ for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
         [~,index] = max(W(:));
         index = ind2sub(size(W(:)),index);
         myPose(:,i) = P(:,index(1));
-        i
+        
         
 end
        
