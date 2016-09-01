@@ -45,7 +45,7 @@ for i = 2:N % You will start estimating myPose from j=2 using ranges(:,2).
         sigma_m = diag([0.1 0.1 0.035]);
     else
     	
-    	sigma_m = diag([0.1*abs(state(3)) 0.01*abs(state(4)) 0.01*abs(state(4)+state(3))]);
+    	sigma_m = diag([abs(state(3)) abs(state(4)) 0.01*abs(state(4)+state(3))]);
     end
     sigma_u = [0,0,0];   
 %     % 2) Measurement Update 
